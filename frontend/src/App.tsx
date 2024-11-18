@@ -1,7 +1,7 @@
-import { Map } from "./components/Map";
-import { PopulationChart } from "./components/PopulationChart";
+import { Chart } from "./components/Chart";
+import { SatelliteMap } from "./components/SatelliteMap";
 
-function App() {
+export const App = () => {
 	return (
 		<div className="min-h-screen bg-black p-8">
 			<div className="max-w-6xl mx-auto space-y-6">
@@ -13,15 +13,13 @@ function App() {
 				</header>
 				<div className="flex gap-4">
 					<div className="max-w-full">
-						<Map />
+						<SatelliteMap />
 					</div>
-					<div className="max-w-96">
-						<PopulationChart />
+					<div className="min-w-96">
+						<Chart />
 					</div>
 				</div>
 			</div>
 		</div>
 	);
-}
-
-export default App;
+};

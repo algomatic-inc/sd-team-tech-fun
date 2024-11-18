@@ -1,8 +1,12 @@
 import { create } from "zustand";
-import type { MapPin, PinState } from "./types";
+import type { Citizen, CitizenState, MapPin, PinState } from "./types";
 
 interface PinStore extends PinState {
 	addPin: (position: { lat: number; lng: number }) => void;
+}
+
+interface CitizenStore extends CitizenState {
+	addCitizen: (citizen: Citizen) => void;
 }
 
 export const usePinStore = create<PinStore>((set) => ({
@@ -18,5 +22,13 @@ export const usePinStore = create<PinStore>((set) => ({
 			position,
 		};
 		set(() => ({ pin: newPin }));
+	},
+}));
+
+export const useCitizenStore = create<CitizenStore>((set) => ({
+	citizens: [],
+
+	addCitizen: (citizen: Citizen) => {
+		set((state) => ({ citizens: [...state.citizens, citizen] }));
 	},
 }));

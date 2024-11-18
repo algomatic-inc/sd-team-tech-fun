@@ -12,6 +12,11 @@ export interface PinState {
 }
 
 export interface Citizen {
+	id: string;
 	message: string;
 	score: number;
+}
+
+export interface CitizenState {
+	citizens: Citizen[];
 }
