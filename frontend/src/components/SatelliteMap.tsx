@@ -1,23 +1,20 @@
+import type { MapMouseEvent } from "@vis.gl/react-google-maps";
+import { AdvancedMarker, Map as GoogleMap } from "@vis.gl/react-google-maps";
 import type React from "react";
 import { useCitizenStore, usePinStore } from "../store";
 import type { Citizen, Coordinate } from "../types";
 
-const MAP_WIDTH = 800;
-const MAP_HEIGHT = 600;
-const TOP_LEFT_LAT = 37.40730236719924;
-const TOP_LEFT_LNG = 136.87806752835687;
-const BOTTOM_RIGHT_LAT = 37.37787591257921;
-const BOTTOM_RIGHT_LNG = 136.91927046609666;
-const LAT_DIFF = TOP_LEFT_LAT - BOTTOM_RIGHT_LAT;
-const LNG_DIFF = BOTTOM_RIGHT_LNG - TOP_LEFT_LNG;
-const API_URL =
-	"https://jtpimcb3u7.execute-api.ap-northeast-1.amazonaws.com/prod";
 const NUM_OF_CITIZENS = 6;
 const TESTS = [
-	"AEONは好き", "AEONは嫌い", "興味はあるけど距離を気にしている", "興味はあるけど混むのが嫌だ", "AEONで働きたい", "お金がなくて困っている"
-]
+	"AEONは好き",
+	"AEONは嫌い",
+	"興味はあるけど距離を気にしている",
+	"興味はあるけど混むのが嫌だ",
+	"AEONで働きたい",
+	"お金がなくて困っている",
+];
 
-type CitizenContent = Exclude<Citizen, "id">
+type CitizenContent = Exclude<Citizen, "id">;
 
 export const SatelliteMap: React.FC = () => {
 	const { pin, addPin } = usePinStore();
@@ -69,7 +66,7 @@ export const SatelliteMap: React.FC = () => {
 			};
 
 			try {
-				const response = await fetch(API_URL, options);
+				const response = await fetch(import.meta.env.VITE_API_URL, options);
 
 				if (response.ok) {
 					const result = await response.json();
@@ -106,60 +103,43 @@ export const SatelliteMap: React.FC = () => {
 		}
 	};
 
-	const handleMapClick = async (e: React.MouseEvent<HTMLDivElement>) => {
-		const rect = e.currentTarget.getBoundingClientRect();
-		const x = e.clientX - rect.left;
-		const y = e.clientY - rect.top;
+	const handleClick = async (e: MapMouseEvent) => {
+		if (!e.detail.latLng) {
+			console.error("LatLng is undefined");
+			return;
+		}
 
-		// ピクセル座標 (x, y) から緯度経度を計算
-		const lat = TOP_LEFT_LAT - (y / MAP_HEIGHT) * LAT_DIFF;
-		const lng = TOP_LEFT_LNG + (x / MAP_WIDTH) * LNG_DIFF;
+		const lat = e.detail.latLng.lat;
+		const lng = e.detail.latLng.lng;
 
 		addPin({ lat, lng });
 		await updateCitizens({ lat, lng });
 	};
 
-	const coordinateToPixel = (coord: Coordinate) => {
-		// 緯度経度からピクセル座標を計算
-		const x = ((coord.lng - TOP_LEFT_LNG) / LNG_DIFF) * MAP_WIDTH;
-		const y = ((TOP_LEFT_LAT - coord.lat) / LAT_DIFF) * MAP_HEIGHT;
-
-		return { x, y };
-	};
-
-	const { x, y } = coordinateToPixel(pin.position);
-
 	return (
-		// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
 		<div
 			className="relative bg-blue-50 border-4 border-blue-200 rounded-lg overflow-hidden cursor-crosshair"
-			style={{ width: MAP_WIDTH, height: MAP_HEIGHT }}
-			onClick={handleMapClick}
+			style={{ width: 800, height: 600 }}
 		>
-			<div className="absolute inset-0 bg-[url('map.png')] opacity-90" />
-			<div className="absolute inset-0 grid grid-cols-12 grid-rows-10">
-				{Array.from({ length: 144 }).map((_) => (
-					<div
-						key={self.crypto.randomUUID()}
-						className="border border-blue-100/30"
-					/>
-				))}
-			</div>
-			<div
-				className="absolute transform -translate-x-1/2 -translate-y-1/2 group"
-				style={{ left: x, top: y }}
+			<GoogleMap
+				defaultZoom={14}
+				defaultCenter={{ lat: 37.40033202145941, lng: 136.90473918907935 }} // 輪島市付近
+				mapId={import.meta.env.VITE_GOOGLE_MAP_ID}
+				onClick={handleClick}
+				mapTypeId="satellite"
 			>
-				<img
-					src="aeon.png"
-					alt="AEON"
-					className="w-8 h-8 text-red-500 cursor-pointer"
-				/>
-				<div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-white rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
-					<p className="text-xs text-gray-500">
-						{pin.position.lat.toFixed(2)}°N, {pin.position.lng.toFixed(2)}°E
-					</p>
-				</div>
-			</div>
+				{pin && (
+					<AdvancedMarker
+						position={{ lat: pin.position.lat, lng: pin.position.lng }}
+					>
+						<img
+							src="aeon.png"
+							alt="AEON"
+							className="w-8 h-8 text-red-500 cursor-pointer"
+						/>
+					</AdvancedMarker>
+				)}
+			</GoogleMap>
 		</div>
 	);
 };
