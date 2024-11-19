@@ -30,7 +30,7 @@ export class GeminiApiStack extends cdk.Stack {
           ],
         },
       }),
-      memorySize: 1024,
+      memorySize: 2048,
       timeout: cdk.Duration.seconds(30),
       environment: {
         GOOGLE_CLOUD_PROJECT: credentials.project_id,
@@ -40,6 +40,9 @@ export class GeminiApiStack extends cdk.Stack {
         GOOGLE_CLIENT_ID: credentials.client_id,
         GOOGLE_CLIENT_X509_CERT_URL: credentials.client_x509_cert_url,
         VERTEX_LOCATION: "us-central1",
+        GEMINI_MODEL: "gemini-1.5-flash",
+        DYNAMODB_SATELLITEDATA_TABLE: "SatelliteData",
+        DYNAMODB_PERSONA_TABLE: "Persona",
       },
     });
 
