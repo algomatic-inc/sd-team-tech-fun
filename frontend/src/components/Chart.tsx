@@ -22,6 +22,11 @@ export const Chart: React.FC = () => {
 			<div className="space-y-4">
 				{citizens.map((citizen) => (
 					<div key={citizen.id} className="space-y-1">
+						<div>〇〇さん</div>
+						<div>
+							{citizen.houseLocation.lat.toFixed(5)}°N,{" "}
+							{citizen.houseLocation.lng.toFixed(5)}°E{" "}
+						</div>
 						<div>
 							<p>{citizen.message}</p>
 						</div>

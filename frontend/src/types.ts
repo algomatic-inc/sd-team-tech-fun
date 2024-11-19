@@ -15,6 +15,7 @@ export interface Citizen {
 	id: string;
 	message: string;
 	score: number;
+	houseLocation: Coordinate;
 }
 
 export interface CitizenState {
