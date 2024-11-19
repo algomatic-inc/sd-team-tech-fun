@@ -1,4 +1,3 @@
-import { Chart } from "./components/Chart";
 import { SatelliteMap } from "./components/SatelliteMap";
 
 export const App = () => {
@@ -11,13 +10,8 @@ export const App = () => {
 						AEONを出店したい場所をクリックしてください。
 					</p>
 				</header>
-				<div className="flex gap-4">
-					<div className="max-w-full">
-						<SatelliteMap />
-					</div>
-					<div className="min-w-96">
-						<Chart />
-					</div>
+				<div>
+					<SatelliteMap />
 				</div>
 			</div>
 		</div>
