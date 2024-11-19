@@ -3,6 +3,9 @@ Satellite Data Days ~ 衛星画像ハッカソン ~
 
 Team Tech Funの開発リポジトリです
 
+### Demo URL
+https://tf-satellite-hackathon-frontend.s3.ap-northeast-1.amazonaws.com/index.html
+
 ### イベントURL
 https://lu.ma/vnnro5q4?tk=olCl0z
 
@@ -13,19 +16,7 @@ https://lu.ma/vnnro5q4?tk=olCl0z
 ![AWS](https://img.shields.io/badge/AWS-%23FF9900.svg?style=for-the-badge&logo=amazon-web-services&logoColor=white&style=flat)
 
 ## 📁 フォルダ構成
-```bash
-$ tree
-.
-├── README.md
-├── credentials
-└── samples
-    ├── README.md
-    ├── hello_gemini
-    │   └── hello_genimi.py
-    ├── hello_genimi.py
-    ├── pyproject.toml
-    └── uv.lock
-```
+https://uithub.com/algomatic-inc/sd-team-tech-fun
 
 ## ⚙️ 環境構築
 ### WSL
@@ -70,7 +61,22 @@ https://drive.google.com/file/d/1DSUvACsZa4T_76hR9rTDnJ9vo_8lEZjf/view
 Nothing to do
 
 ## ⚡️ デプロイ
+### Frontend
 ```bash
+cd frontend
+pnpm run deploy
+```
+
+### Backend
+```bash
+cd geminiApi
+cdk synth
+cdk deploy
+```
+
+### Infra
+```bash
+cd infra
 cdk synth
 cdk deploy
 ```
@@ -92,7 +98,7 @@ cdk deploy
 - [ ] 技術検証
   - [x] ~~Gemini呼び出し~~
   - [x] ~~提供されたAPIの呼び出し~~
-  - [ ] 衛星画像データから都合の良いデータに変換する
+  - [x] 衛星画像データから都合の良いデータに変換する
     - 位置情報
     - 属性値
       - （例）光の度合いを見て、田舎か都会か判定する
@@ -113,8 +119,9 @@ cdk deploy
   - [x] 地図にピンを立てる
   - [x] ピン情報から緯度・経度を取得する
     - ここはBackendとの通信必要なところ
-  - [ ] 住民の位置をピンで表す
-  - [ ] シミュレーション結果を表示する
+  - [x] 住民の位置をピンで表す
+  - [x] シミュレーション結果を表示する
+  - [ ] 細かい調整する
 - [ ] Backend（優先度：高）
   - [ ] AIペルソナをn人分作る（本来は処理すべきだとデータセットで）
     - 緯度・経度情報に基づいたデータから作る
@@ -124,17 +131,16 @@ cdk deploy
     - 業態：スーパーとか、最初は決め打ちで
   - [ ] output: あるAIペルソナがピン立てたところに行く行かないを判定
     - 0-1というよりはグラデーション（絶対行くなら10、絶対行かないなら0）
-- [ ] Infra
+- [x] Infra
   - [x] GCP
     - [x] ~~環境用意~~
     - [x] ~~プロモーションコードの適用~~
     - [x] ~~予算とアラートの設定~~
     - [x] Google Map APIの設定
-  - [ ] AWS
+  - [x] AWS
     - [x] ~~環境用意~~
-    - [ ] Lambda
-    - （以下は余力あれば）
-    - [ ] API Gateway
-    - [ ] DynamoDB
-    - [ ] CloudFront
-    - [ ] S3
+    - [x] Lambda
+    - [x] API Gateway
+    - [x] DynamoDB
+    - [x] S3（画像用）
+    - [x] S3（フロント用）
