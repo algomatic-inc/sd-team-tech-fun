@@ -4,6 +4,13 @@ import * as cdk from "aws-cdk-lib";
 import { Construct } from "constructs";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as apigateway from "aws-cdk-lib/aws-apigateway";
+import {
+  ManagedPolicy,
+  PolicyDocument,
+  PolicyStatement,
+  Role,
+  ServicePrincipal,
+} from "aws-cdk-lib/aws-iam";
 
 export class GeminiApiStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -15,6 +22,49 @@ export class GeminiApiStack extends cdk.Stack {
       "../../credentials/tf-satellite-hackathon-826dd6f95aca.json"
     );
     const credentials = JSON.parse(fs.readFileSync(credentialsPath, "utf8"));
+
+    const iamPolicyLambdaFunctionName = "gemini-api-function-policy";
+    const iamPolicyLambdaFunction = new ManagedPolicy(
+      this,
+      "geminiApiFunctionPolicy",
+      {
+        managedPolicyName: iamPolicyLambdaFunctionName,
+        document: new PolicyDocument({
+          statements: [
+            // logging to CloudWatch Logs
+            new PolicyStatement({
+              actions: [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+                "logs:GetLogEvents",
+              ],
+              resources: [`*`],
+            }),
+            // Dynamo DB policy statement
+            new PolicyStatement({
+              actions: [
+                "dynamodb:PutItem",
+                "dynamodb:GetItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem",
+                "dynamodb:Scan",
+                "dynamodb:Query",
+              ],
+              resources: [`*`],
+            }),
+          ],
+        }),
+      }
+    );
+
+    // Create an IAM Role with the IAM policies created above.
+    const iamRoleLambdaFunctionName = "gemini-api-function-role";
+    const iamRoleLambdaFunction = new Role(this, "geminiApiFunctionRole", {
+      roleName: iamRoleLambdaFunctionName,
+      path: "/",
+      assumedBy: new ServicePrincipal("lambda.amazonaws.com"),
+      managedPolicies: [iamPolicyLambdaFunction],
+    });
 
     // Lambda関数の定義
     const geminiFunction = new lambda.Function(this, "GeminiFunction", {
@@ -30,6 +80,7 @@ export class GeminiApiStack extends cdk.Stack {
           ],
         },
       }),
+      role: iamRoleLambdaFunction,
       memorySize: 2048,
       timeout: cdk.Duration.seconds(30),
       environment: {
