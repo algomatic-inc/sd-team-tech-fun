@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "biome check --write ./src",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "pnpm build && aws s3 cp ./dist s3://tf-satellite-hackathon-frontend --recursive",
+    "test": "source .env && echo $DISTRIBUTION_ID"
   },
   "dependencies": {
     "@googlemaps/markerclusterer": "^2.5.3",

@@ -14,4 +14,7 @@ pnpm run dev
 pnpm run build
 ```
 
-distフォルダにビルドしたファイルができるので、これをS3に配置すればOK
+## デプロイ
+```bash
+pnpm run deploy
+```
