@@ -1,7 +1,14 @@
 import json
+from decimal import Decimal
 import traceback
 
 from service import execute_simulation, get_personas, setup_gemini
+
+
+def _decimal_default_proc(obj):
+    if isinstance(obj, Decimal):
+        return float(obj)
+    raise TypeError
 
 
 def make_response(status_code: int, body: dict):
@@ -11,7 +18,7 @@ def make_response(status_code: int, body: dict):
             "Content-Type": "application/json; charset=utf-8",
             "Access-Control-Allow-Origin": "*",
         },
-        "body": json.dumps(body, ensure_ascii=False),
+        "body": json.dumps(body, ensure_ascii=False, default=_decimal_default_proc),
     }
 
 
@@ -41,14 +48,7 @@ def lambda_handler(event, context):
             personas,
         )
 
-        return {
-            "statusCode": 200,
-            "headers": {
-                "Content-Type": "application/json; charset=utf-8",
-                "Access-Control-Allow-Origin": "*",
-            },
-            "body": json.dumps({"response": res}, ensure_ascii=False),
-        }
+        return make_response(200, res)
 
     except Exception as e:
         print(traceback.format_exc())
