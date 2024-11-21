@@ -5,7 +5,7 @@ import re
 import vertexai
 from geopy.distance import geodesic
 from google.oauth2 import service_account
-from template import PERSONA_TEMPLATE
+from template import PERSONA_TEMPLATE, SATTELITE_INFO_TEMPLATE
 from vertexai.generative_models import GenerativeModel
 from boto3.dynamodb.types import TypeDeserializer
 
@@ -204,6 +204,51 @@ TEST_PERSONAS = [
     },
 ]
 
+TEST_SATTELITE_INFO = {
+    "locationId": {"S": "37.37269675925923_136.9147893518519"},
+    "category": {"S": "sample"},
+    "agriculturalArea": {"N": "0"},
+    "commercialFacilities": {"N": "0"},
+    "housing": {"N": "0"},
+    "industrialFacilities": {"N": "0"},
+    "lat": {"N": "37.37269675925923"},
+    "lng": {"N": "136.9147893518519"},
+    "park": {"N": "0"},
+    "parkingLot": {"N": "0"},
+    "publicFacilities": {"N": "0"},
+    "road": {"N": "0"},
+    "waterArea": {"N": "0"},
+    "woodland": {"N": "10"},
+}
+
+SATELLITE_INFO_LNG = [
+    "136.876863425926",
+    "136.88160416666673",
+    "136.88634490740748",
+    "136.89108564814822",
+    "136.89582638888896",
+    "136.9005671296297",
+    "136.90530787037042",
+    "136.91004861111116",
+    "136.9147893518519",
+    "136.91953009259265",
+    "136.9242708333334",
+    "136.92901157407414",
+]
+
+SATELLITE_INFO_LAT = [
+    "37.37269675925923",
+    "37.37743749999997",
+    "37.382178240740714",
+    "37.38691898148145",
+    "37.391659722222194",
+    "37.39640046296293",
+    "37.40114120370367",
+    "37.40588194444442",
+    "37.41062268518515",
+    "37.4153634259259",
+]
+
 deserializer = TypeDeserializer()
 
 
@@ -267,16 +312,42 @@ def _fetch_surrounding_info():
     return shops
 
 
+def _get_sattelite_key(lat, lng):
+    # TODO: データが増えてきたら、2分探索とか
+    # 入力を浮動小数点数に変換
+    lat = float(lat)
+    lng = float(lng)
+
+    # 入力された経度以下の最大値を探す
+    max_lng = max([l for l in SATELLITE_INFO_LNG if float(l) <= lng])
+    # 入力された緯度以上の最大値を探す
+    max_lat = min([l for l in SATELLITE_INFO_LAT if float(l) >= lat])
+
+    # それぞれの値のインデックスを取得
+    j = SATELLITE_INFO_LNG.index(max_lng)
+    i = SATELLITE_INFO_LAT.index(max_lat)
+
+    return f"{SATELLITE_INFO_LAT[i]}_{SATELLITE_INFO_LNG[j]}"
+
+
+def _fetch_sattelite_info(lat, lng) -> str:
+    id = _get_sattelite_key(lat, lng)
+    # TODO: DynamoDBからとってくる
+    res = TEST_SATTELITE_INFO
+    res = {k: deserializer.deserialize(v) for k, v in res.items()}
+    return SATTELITE_INFO_TEMPLATE.safe_substitute(res)
+
+
 def _create_surronding_info_prompt(persona_lat: float, persona_lng: float, shops: list):
-    prompt = "近くのお店の情報は以下の通りです。\n      --------\n"
+    prompt = ""
     for shop in shops:
-        prompt += f"      店名: {shop['shop_name']}\n"
-        prompt += f"      説明: {shop['shop_description']}\n"
+        prompt += f"        店名: {shop['shop_name']}\n"
+        prompt += f"        説明: {shop['shop_description']}\n"
         prompt += (
-            f"      営業時間: {shop['shop_open_time']}-{shop['shop_close_time']}\n"
+            f"        営業時間: {shop['shop_open_time']}-{shop['shop_close_time']}\n"
         )
-        prompt += f"      あなたの家からの距離: {_geopy_distance(shop['shop_lat'], shop['shop_lng'], persona_lat, persona_lng)} km\n"
-        prompt += "      --------\n"
+        prompt += f"        あなたの家からの距離: {_geopy_distance(shop['shop_lat'], shop['shop_lng'], persona_lat, persona_lng)} km\n"
+        prompt += "        --------\n"
     return prompt
 
 
@@ -338,14 +409,16 @@ def execute_simulation(
                 float(persona["house_location"]["lng"]),
             ),
         }
-        shops = _fetch_surrounding_info()
 
+        sattelite_info_arround_shomething_new = _fetch_sattelite_info(lat, lng)
+        shops = _fetch_surrounding_info()
         other_info = {
             "surrounding_info": _create_surronding_info_prompt(
                 persona["house_location"]["lat"],
                 persona["house_location"]["lng"],
                 shops,
-            )
+            ),
+            "sattelite_info_arround_shomething_new": sattelite_info_arround_shomething_new,
         }
 
         # print(f"{persona=}")
