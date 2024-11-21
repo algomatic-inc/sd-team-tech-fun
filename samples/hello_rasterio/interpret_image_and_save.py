@@ -1,5 +1,8 @@
 import re
+import shutil
+import time
 from decimal import Decimal
+from glob import glob
 from pathlib import Path
 from typing import Dict
 
@@ -12,6 +15,7 @@ from vertexai.generative_models import GenerativeModel, Image, Part
 
 PROJECT_ROOT_DIR = Path(__file__).parent.parent.parent
 IMAGE_DIR = Path(__file__).parent / "output"
+DONE_DIR = Path(__file__).parent / "done"
 
 session = boto3.Session(profile_name="knowledge")
 client = session.client("dynamodb")
@@ -104,23 +108,31 @@ def main():
     # parser.add_argument("prompt", type=str, help="Geminiへの質問内容")
     # args = parser.parse_args()
 
-    image_path = IMAGE_DIR / "tile_136.9147893518519_37.391659722222194.png"
-    lat, lng = get_lat_lng_from_filename(image_path)
+    # Geminiのセットアップ
+    model = setup_gemini()
 
-    try:
-        # Geminiのセットアップ
-        model = setup_gemini()
+    for path in glob(f"{IMAGE_DIR}/*.png"):
+        image_path = Path(path)
+        print(f"Interpreting... {image_path=}")
 
-        # 回答の取得と表示
-        response = get_gemini_response(model, PROMPT, image_path)
-        response = clean_response(response)
-        print("\nGeminiの回答:")
-        print(response)
+        lat, lng = get_lat_lng_from_filename(image_path)
 
-        save_to_dynamodb(lat, lng, response)
+        try:
+            # 回答の取得と表示
+            response = get_gemini_response(model, PROMPT, image_path)
+            response = clean_response(response)
+            print(response)
 
-    except Exception as e:
-        print(f"エラーが発生しました: {str(e)}")
+            save_to_dynamodb(lat, lng, response)
+
+            # ファイルをdoneディレクトリに移動する
+            shutil.move(image_path, DONE_DIR / image_path.name)
+
+            time.sleep(10)
+
+        except Exception as e:
+            print(image_path, f"エラーが発生しました: {str(e)}")
+            continue
 
 
 if __name__ == "__main__":
