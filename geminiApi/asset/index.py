@@ -2,7 +2,7 @@ import json
 from decimal import Decimal
 import traceback
 
-from service import execute_simulation, get_personas, setup_gemini
+from service import execute_simulation, fetch_personas, setup_gemini
 
 
 def _decimal_default_proc(obj):
@@ -36,7 +36,7 @@ def lambda_handler(event, context):
         if lat is None or lng is None:
             return make_response(400, {"error": "location info (lat, lng) is required"})
 
-        personas = get_personas()
+        personas = fetch_personas()
 
         model = setup_gemini()
 

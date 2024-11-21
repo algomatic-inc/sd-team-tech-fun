@@ -9,11 +9,7 @@ PERSONA_TEMPLATE = string.Template(
     市民の気持ちのメッセージと、実際に行く確率をスコアとして出力してください。
 
 情報:
-    ${something_new}ができる緯度経度:
-        ${something_new__lat} °N, ${something_new__lng} °E
-    あなたが住んでいる場所の緯度経度:
-        ${house_location__lat} °N, ${house_location__lng} °E
-    あなたの家と、${something_new}までの直線距離:
+    あなたの家と、${something_new}までの距離:
         ${distance} km
     住民の情報:
         - 年齢: ${age} 歳
@@ -24,6 +20,7 @@ PERSONA_TEMPLATE = string.Template(
         - 仕事: ${job}
         - 年収: ${annual_income} 円
         - 趣味: ${hobby}
+    ${surrounding_info}
 
 制約:
     - JSON形式で出力してください
@@ -36,5 +33,9 @@ PERSONA_TEMPLATE = string.Template(
         message: string,
         score: number
     }
+
+出力例:
+    - {"message": "車もないし、歩いて40分は流石に遠い", "score": 2}
+    - {"message": "車で15分くらいなので週末には家族で行きたい", "score": 7}
 """
 )

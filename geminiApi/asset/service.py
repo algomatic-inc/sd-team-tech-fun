@@ -15,6 +15,72 @@ DYNAMODB_PERSONA_TABLE = os.environ["DYNAMODB_PERSONA_TABLE"]
 DYNAMODB_SATELLITEDATA_TABLE = os.environ["DYNAMODB_SATELLITEDATA_TABLE"]
 
 
+TEST_SURROUNDING_INFO = [
+    {
+        "shop_lat": {"N": "37.39124887111705"},
+        "shop_lng": {"N": "136.90151661513806"},
+        "shop_name": {"S": "ファミリーマート 輪島中央店"},
+        "shop_open_time": {"S": "7:30"},
+        "shop_close_time": {"S": "18:00"},
+        "is_24_hour": {"BOOL": False},
+        "shop_description": {"S": "コンビニエンスストア"},
+    },
+    {
+        "shop_lat": {"N": "37.38744274629935"},
+        "shop_lng": {"N": "136.90183371260338"},
+        "shop_name": {"S": "クスリのアオキ 輪島店"},
+        "shop_open_time": {"S": "11:00"},
+        "shop_close_time": {"S": "20:00"},
+        "is_24_hour": {"BOOL": False},
+        "shop_description": {"S": "ドラックストアで、日用品や食料品も売っている"},
+    },
+    {
+        "shop_lat": {"N": "37.38635159313893"},
+        "shop_lng": {"N": "136.90179079726164"},
+        "shop_name": {"S": "ファッションセンターしまむら 輪島店"},
+        "shop_open_time": {"S": "10:00"},
+        "shop_close_time": {"S": "19:00"},
+        "is_24_hour": {"BOOL": False},
+        "shop_description": {"S": "洋服店"},
+    },
+    {
+        "shop_lat": {"N": "37.38652208686701"},
+        "shop_lng": {"N": "136.90282076546356"},
+        "shop_name": {"S": "ヤマダデンキ テックランド輪島店"},
+        "shop_open_time": {"S": "10:00"},
+        "shop_close_time": {"S": "17:00"},
+        "is_24_hour": {"BOOL": False},
+        "shop_description": {"S": "家電量販店"},
+    },
+    {
+        "shop_lat": {"N": "37.38707059062232"},
+        "shop_lng": {"N": "136.90471856249755"},
+        "shop_name": {"S": "ヤスサキ グルメ館 輪島店"},
+        "shop_open_time": {"S": "9:00"},
+        "shop_close_time": {"S": "19:00"},
+        "is_24_hour": {"BOOL": False},
+        "shop_description": {"S": "食料品店"},
+    },
+    {
+        "shop_lat": {"N": "37.39040306361326"},
+        "shop_lng": {"N": "136.9067508475095"},
+        "shop_name": {"S": "わじまおみやげ館"},
+        "shop_open_time": {"S": "10:00"},
+        "shop_close_time": {"S": "18:00"},
+        "is_24_hour": {"BOOL": False},
+        "shop_description": {"S": "お土産屋"},
+    },
+    {
+        "shop_lat": {"N": "37.39416967661686"},
+        "shop_lng": {"N": "136.89729936172853"},
+        "shop_name": {"S": "酒ブティックおくだ"},
+        "shop_open_time": {"S": "10:00"},
+        "shop_close_time": {"S": "18:00"},
+        "is_24_hour": {"BOOL": False},
+        "shop_description": {"S": "酒屋"},
+    },
+]
+
 TEST_PERSONAS = [
     {
         "house_location": {
@@ -145,7 +211,7 @@ def _geopy_distance(lat1, lng1, lat2, lng2):
     point1 = (lat1, lng1)
     point2 = (lat2, lng2)
     distance = geodesic(point1, point2).kilometers
-    return distance
+    return round(distance, 3)
 
 
 def _flatten_dict(nested_dict, parent_key="", sep="__"):
@@ -185,12 +251,33 @@ def _extract_json(json_like_str) -> dict:
     return None
 
 
-def get_personas():
+def fetch_personas():
     personas = []
     # TODO: DynamoDBからとってくる
     for p in TEST_PERSONAS:
         personas.append({k: deserializer.deserialize(v) for k, v in p.items()})
     return personas
+
+
+def _fetch_surrounding_info():
+    # TODO: DynamoDBからとってくる
+    shops = []
+    for s in TEST_SURROUNDING_INFO:
+        shops.append({k: deserializer.deserialize(v) for k, v in s.items()})
+    return shops
+
+
+def _create_surronding_info_prompt(persona_lat: float, persona_lng: float, shops: list):
+    prompt = "近くのお店の情報は以下の通りです。\n      --------\n"
+    for shop in shops:
+        prompt += f"      店名: {shop['shop_name']}\n"
+        prompt += f"      説明: {shop['shop_description']}\n"
+        prompt += (
+            f"      営業時間: {shop['shop_open_time']}-{shop['shop_close_time']}\n"
+        )
+        prompt += f"      あなたの家からの距離: {_geopy_distance(shop['shop_lat'], shop['shop_lng'], persona_lat, persona_lng)} km\n"
+        prompt += "      --------\n"
+    return prompt
 
 
 def setup_gemini():
@@ -251,12 +338,21 @@ def execute_simulation(
                 float(persona["house_location"]["lng"]),
             ),
         }
+        shops = _fetch_surrounding_info()
 
-        print(f"{persona=}")
-        print(f"{something_new_info=}")
+        other_info = {
+            "surrounding_info": _create_surronding_info_prompt(
+                persona["house_location"]["lat"],
+                persona["house_location"]["lng"],
+                shops,
+            )
+        }
+
+        # print(f"{persona=}")
+        # print(f"{something_new_info=}")
 
         prompt = PERSONA_TEMPLATE.safe_substitute(
-            _flatten_dict(persona) | something_new_info
+            _flatten_dict(persona) | something_new_info | other_info
         )
 
         print(f"{prompt=}")
