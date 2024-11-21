@@ -9,12 +9,6 @@ PERSONA_TEMPLATE = string.Template(
     市民の気持ちのメッセージと、実際に行く確率をスコアとして出力してください。
 
 情報:
-    ${something_new}ができる緯度経度:
-        ${something_new__lat} °N, ${something_new__lng} °E
-    あなたが住んでいる場所の緯度経度:
-        ${house_location__lat} °N, ${house_location__lng} °E
-    あなたの家と、${something_new}までの直線距離:
-        ${distance} km
     住民の情報:
         - 年齢: ${age} 歳
         - 性別: ${gender}
@@ -24,6 +18,12 @@ PERSONA_TEMPLATE = string.Template(
         - 仕事: ${job}
         - 年収: ${annual_income} 円
         - 趣味: ${hobby}
+    あなたの家と、${something_new}までの距離:
+        ${distance} km
+    あなたの家の近くのお店の情報:
+${surrounding_info}
+    ${something_new}の周辺土地情報
+${sattelite_info_arround_shomething_new}
 
 制約:
     - JSON形式で出力してください
@@ -36,5 +36,25 @@ PERSONA_TEMPLATE = string.Template(
         message: string,
         score: number
     }
+
+出力例:
+    - {"message": "車もないし、歩いて40分は流石に遠い", "score": 2}
+    - {"message": "車で15分くらいなので週末には家族で行きたい", "score": 7}
+"""
+)
+
+SATTELITE_INFO_TEMPLATE = string.Template(
+    """\
+        （0～10のスコアで、0が不一致の可能性が高く、10が一致する可能性が高い）
+        住宅地: ${housing}
+        商業施設: ${commercialFacilities}
+        工業施設: ${industrialFacilities}
+        公共施設: ${publicFacilities}
+        駐車場: ${parkingLot}
+        道路: ${road}
+        公園: ${park}
+        公共用水域: ${waterArea}
+        農地: ${agriculturalArea}
+        森林地帯: ${woodland}
 """
 )

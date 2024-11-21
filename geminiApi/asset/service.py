@@ -5,53 +5,258 @@ import re
 import vertexai
 from geopy.distance import geodesic
 from google.oauth2 import service_account
-from template import PERSONA_TEMPLATE
+from template import PERSONA_TEMPLATE, SATTELITE_INFO_TEMPLATE
 from vertexai.generative_models import GenerativeModel
+from boto3.dynamodb.types import TypeDeserializer
+
 
 GEMINI_MODEL = os.environ["GEMINI_MODEL"]
 DYNAMODB_PERSONA_TABLE = os.environ["DYNAMODB_PERSONA_TABLE"]
 DYNAMODB_SATELLITEDATA_TABLE = os.environ["DYNAMODB_SATELLITEDATA_TABLE"]
 
 
-TEST_PERSONAS = [
+TEST_SURROUNDING_INFO = [
     {
-        "house_location": {"lat": 35.681236, "lng": 139.767125},
-        "age": 45,
-        "gender": "男性",
-        "family": {"spouse": True, "children": 2},
-        "has_car": True,
-        "job": "エンジニア",
-        "annual_income": 8000000,
-        "hobby": "釣り",
+        "shop_lat": {"N": "37.39124887111705"},
+        "shop_lng": {"N": "136.90151661513806"},
+        "shop_name": {"S": "ファミリーマート 輪島中央店"},
+        "shop_open_time": {"S": "7:30"},
+        "shop_close_time": {"S": "18:00"},
+        "is_24_hour": {"BOOL": False},
+        "shop_description": {"S": "コンビニエンスストア"},
     },
     {
-        "house_location": {"lat": 34.693738, "lng": 135.502165},
-        "age": 32,
-        "gender": "女性",
-        "family": {"spouse": False, "children": 0},
-        "has_car": False,
-        "job": "グラフィックデザイナー",
-        "annual_income": 6000000,
-        "hobby": "ヨガ",
+        "shop_lat": {"N": "37.38744274629935"},
+        "shop_lng": {"N": "136.90183371260338"},
+        "shop_name": {"S": "クスリのアオキ 輪島店"},
+        "shop_open_time": {"S": "11:00"},
+        "shop_close_time": {"S": "20:00"},
+        "is_24_hour": {"BOOL": False},
+        "shop_description": {"S": "ドラックストアで、日用品や食料品も売っている"},
     },
     {
-        "house_location": {"lat": 43.062095, "lng": 141.354376},
-        "age": 29,
-        "gender": "男性",
-        "family": {"spouse": False, "children": 0},
-        "has_car": True,
-        "job": "教師",
-        "annual_income": 4500000,
-        "hobby": "写真撮影",
+        "shop_lat": {"N": "37.38635159313893"},
+        "shop_lng": {"N": "136.90179079726164"},
+        "shop_name": {"S": "ファッションセンターしまむら 輪島店"},
+        "shop_open_time": {"S": "10:00"},
+        "shop_close_time": {"S": "19:00"},
+        "is_24_hour": {"BOOL": False},
+        "shop_description": {"S": "洋服店"},
+    },
+    {
+        "shop_lat": {"N": "37.38652208686701"},
+        "shop_lng": {"N": "136.90282076546356"},
+        "shop_name": {"S": "ヤマダデンキ テックランド輪島店"},
+        "shop_open_time": {"S": "10:00"},
+        "shop_close_time": {"S": "17:00"},
+        "is_24_hour": {"BOOL": False},
+        "shop_description": {"S": "家電量販店"},
+    },
+    {
+        "shop_lat": {"N": "37.38707059062232"},
+        "shop_lng": {"N": "136.90471856249755"},
+        "shop_name": {"S": "ヤスサキ グルメ館 輪島店"},
+        "shop_open_time": {"S": "9:00"},
+        "shop_close_time": {"S": "19:00"},
+        "is_24_hour": {"BOOL": False},
+        "shop_description": {"S": "食料品店"},
+    },
+    {
+        "shop_lat": {"N": "37.39040306361326"},
+        "shop_lng": {"N": "136.9067508475095"},
+        "shop_name": {"S": "わじまおみやげ館"},
+        "shop_open_time": {"S": "10:00"},
+        "shop_close_time": {"S": "18:00"},
+        "is_24_hour": {"BOOL": False},
+        "shop_description": {"S": "お土産屋"},
+    },
+    {
+        "shop_lat": {"N": "37.39416967661686"},
+        "shop_lng": {"N": "136.89729936172853"},
+        "shop_name": {"S": "酒ブティックおくだ"},
+        "shop_open_time": {"S": "10:00"},
+        "shop_close_time": {"S": "18:00"},
+        "is_24_hour": {"BOOL": False},
+        "shop_description": {"S": "酒屋"},
     },
 ]
+
+TEST_PERSONAS = [
+    {
+        "house_location": {
+            "M": {"lat": {"N": "37.3984395"}, "lng": {"N": "136.8987622"}}
+        },
+        "age": {"N": "42"},
+        "gender": {"S": "男性"},
+        "family": {"M": {"spouse": {"BOOL": True}, "children": {"N": "2"}}},
+        "has_car": {"BOOL": True},
+        "job": {"S": "システムエンジニア"},
+        "annual_income": {"N": "7500000"},
+        "hobby": {"S": "ゴルフ"},
+    },
+    {
+        "house_location": {
+            "M": {"lat": {"N": "37.3872560"}, "lng": {"N": "136.8999633"}}
+        },
+        "age": {"N": "35"},
+        "gender": {"S": "女性"},
+        "family": {"M": {"spouse": {"BOOL": True}, "children": {"N": "1"}}},
+        "has_car": {"BOOL": True},
+        "job": {"S": "看護師"},
+        "annual_income": {"N": "4800000"},
+        "hobby": {"S": "ヨガ"},
+    },
+    {
+        "house_location": {
+            "M": {"lat": {"N": "37.3873960"}, "lng": {"N": "136.9028172"}}
+        },
+        "age": {"N": "28"},
+        "gender": {"S": "男性"},
+        "family": {"M": {"spouse": {"BOOL": False}, "children": {"N": "0"}}},
+        "has_car": {"BOOL": False},
+        "job": {"S": "公務員"},
+        "annual_income": {"N": "4200000"},
+        "hobby": {"S": "釣り"},
+    },
+    {
+        "house_location": {
+            "M": {"lat": {"N": "37.4012490"}, "lng": {"N": "136.9006156"}}
+        },
+        "age": {"N": "52"},
+        "gender": {"S": "男性"},
+        "family": {"M": {"spouse": {"BOOL": True}, "children": {"N": "3"}}},
+        "has_car": {"BOOL": True},
+        "job": {"S": "医師"},
+        "annual_income": {"N": "12000000"},
+        "hobby": {"S": "テニス"},
+    },
+    {
+        "house_location": {
+            "M": {"lat": {"N": "37.3937342"}, "lng": {"N": "136.9014595"}}
+        },
+        "age": {"N": "45"},
+        "gender": {"S": "女性"},
+        "family": {"M": {"spouse": {"BOOL": True}, "children": {"N": "2"}}},
+        "has_car": {"BOOL": True},
+        "job": {"S": "会社役員"},
+        "annual_income": {"N": "8500000"},
+        "hobby": {"S": "ガーデニング"},
+    },
+    {
+        "house_location": {
+            "M": {"lat": {"N": "37.3946083"}, "lng": {"N": "136.9018299"}}
+        },
+        "age": {"N": "33"},
+        "gender": {"S": "女性"},
+        "family": {"M": {"spouse": {"BOOL": False}, "children": {"N": "0"}}},
+        "has_car": {"BOOL": False},
+        "job": {"S": "デザイナー"},
+        "annual_income": {"N": "4500000"},
+        "hobby": {"S": "写真"},
+    },
+    {
+        "house_location": {
+            "M": {"lat": {"N": "37.4013490"}, "lng": {"N": "136.9046588"}}
+        },
+        "age": {"N": "48"},
+        "gender": {"S": "男性"},
+        "family": {"M": {"spouse": {"BOOL": True}, "children": {"N": "1"}}},
+        "has_car": {"BOOL": True},
+        "job": {"S": "大学教授"},
+        "annual_income": {"N": "9200000"},
+        "hobby": {"S": "読書"},
+    },
+    {
+        "house_location": {
+            "M": {"lat": {"N": "37.3922265"}, "lng": {"N": "136.9041895"}}
+        },
+        "age": {"N": "39"},
+        "gender": {"S": "男性"},
+        "family": {"M": {"spouse": {"BOOL": True}, "children": {"N": "2"}}},
+        "has_car": {"BOOL": True},
+        "job": {"S": "営業職"},
+        "annual_income": {"N": "6300000"},
+        "hobby": {"S": "サイクリング"},
+    },
+    {
+        "house_location": {
+            "M": {"lat": {"N": "37.3945565"}, "lng": {"N": "136.9144290"}}
+        },
+        "age": {"N": "41"},
+        "gender": {"S": "女性"},
+        "family": {"M": {"spouse": {"BOOL": True}, "children": {"N": "1"}}},
+        "has_car": {"BOOL": True},
+        "job": {"S": "薬剤師"},
+        "annual_income": {"N": "5800000"},
+        "hobby": {"S": "料理"},
+    },
+    {
+        "house_location": {
+            "M": {"lat": {"N": "37.3949108"}, "lng": {"N": "136.9003880"}}
+        },
+        "age": {"N": "37"},
+        "gender": {"S": "男性"},
+        "family": {"M": {"spouse": {"BOOL": True}, "children": {"N": "2"}}},
+        "has_car": {"BOOL": True},
+        "job": {"S": "会社員"},
+        "annual_income": {"N": "5500000"},
+        "hobby": {"S": "キャンプ"},
+    },
+]
+
+TEST_SATTELITE_INFO = {
+    "locationId": {"S": "37.37269675925923_136.9147893518519"},
+    "category": {"S": "sample"},
+    "agriculturalArea": {"N": "0"},
+    "commercialFacilities": {"N": "0"},
+    "housing": {"N": "0"},
+    "industrialFacilities": {"N": "0"},
+    "lat": {"N": "37.37269675925923"},
+    "lng": {"N": "136.9147893518519"},
+    "park": {"N": "0"},
+    "parkingLot": {"N": "0"},
+    "publicFacilities": {"N": "0"},
+    "road": {"N": "0"},
+    "waterArea": {"N": "0"},
+    "woodland": {"N": "10"},
+}
+
+SATELLITE_INFO_LNG = [
+    "136.876863425926",
+    "136.88160416666673",
+    "136.88634490740748",
+    "136.89108564814822",
+    "136.89582638888896",
+    "136.9005671296297",
+    "136.90530787037042",
+    "136.91004861111116",
+    "136.9147893518519",
+    "136.91953009259265",
+    "136.9242708333334",
+    "136.92901157407414",
+]
+
+SATELLITE_INFO_LAT = [
+    "37.37269675925923",
+    "37.37743749999997",
+    "37.382178240740714",
+    "37.38691898148145",
+    "37.391659722222194",
+    "37.39640046296293",
+    "37.40114120370367",
+    "37.40588194444442",
+    "37.41062268518515",
+    "37.4153634259259",
+]
+
+deserializer = TypeDeserializer()
 
 
 def _geopy_distance(lat1, lng1, lat2, lng2):
     point1 = (lat1, lng1)
     point2 = (lat2, lng2)
     distance = geodesic(point1, point2).kilometers
-    return distance
+    return round(distance, 3)
 
 
 def _flatten_dict(nested_dict, parent_key="", sep="__"):
@@ -91,8 +296,59 @@ def _extract_json(json_like_str) -> dict:
     return None
 
 
-def get_personas():
-    return TEST_PERSONAS
+def fetch_personas():
+    personas = []
+    # TODO: DynamoDBからとってくる
+    for p in TEST_PERSONAS:
+        personas.append({k: deserializer.deserialize(v) for k, v in p.items()})
+    return personas
+
+
+def _fetch_surrounding_info():
+    # TODO: DynamoDBからとってくる
+    shops = []
+    for s in TEST_SURROUNDING_INFO:
+        shops.append({k: deserializer.deserialize(v) for k, v in s.items()})
+    return shops
+
+
+def _get_sattelite_key(lat, lng):
+    # TODO: データが増えてきたら、2分探索とか
+    # 入力を浮動小数点数に変換
+    lat = float(lat)
+    lng = float(lng)
+
+    # 入力された経度以下の最大値を探す
+    max_lng = max([l for l in SATELLITE_INFO_LNG if float(l) <= lng])
+    # 入力された緯度以上の最大値を探す
+    max_lat = min([l for l in SATELLITE_INFO_LAT if float(l) >= lat])
+
+    # それぞれの値のインデックスを取得
+    j = SATELLITE_INFO_LNG.index(max_lng)
+    i = SATELLITE_INFO_LAT.index(max_lat)
+
+    return f"{SATELLITE_INFO_LAT[i]}_{SATELLITE_INFO_LNG[j]}"
+
+
+def _fetch_sattelite_info(lat, lng) -> str:
+    id = _get_sattelite_key(lat, lng)
+    # TODO: DynamoDBからとってくる
+    res = TEST_SATTELITE_INFO
+    res = {k: deserializer.deserialize(v) for k, v in res.items()}
+    return SATTELITE_INFO_TEMPLATE.safe_substitute(res)
+
+
+def _create_surronding_info_prompt(persona_lat: float, persona_lng: float, shops: list):
+    prompt = ""
+    for shop in shops:
+        prompt += f"        店名: {shop['shop_name']}\n"
+        prompt += f"        説明: {shop['shop_description']}\n"
+        prompt += (
+            f"        営業時間: {shop['shop_open_time']}-{shop['shop_close_time']}\n"
+        )
+        prompt += f"        あなたの家からの距離: {_geopy_distance(shop['shop_lat'], shop['shop_lng'], persona_lat, persona_lng)} km\n"
+        prompt += "        --------\n"
+    return prompt
 
 
 def setup_gemini():
@@ -100,7 +356,7 @@ def setup_gemini():
         "type": "service_account",
         "project_id": os.environ["GOOGLE_CLOUD_PROJECT"],
         "private_key_id": os.environ["GOOGLE_PRIVATE_KEY_ID"],
-        "private_key": os.environ["GOOGLE_PRIVATE_KEY"],
+        "private_key": os.environ["GOOGLE_PRIVATE_KEY"].replace("\\n", "\n"),
         "client_email": os.environ["GOOGLE_CLIENT_EMAIL"],
         "client_id": os.environ["GOOGLE_CLIENT_ID"],
         "auth_uri": "https://accounts.google.com/o/oauth2/auth",
@@ -137,7 +393,9 @@ def _get_gemini_response(model, prompt: str) -> dict:
     return _extract_json(response.text)
 
 
-def execute_simulation(model, something_new: str, lat: str, lng: str, personas: list):
+def execute_simulation(
+    model, something_new: str, lat: float, lng: float, personas: list
+):
     results = []
     for persona in personas:
         something_new_info = {
@@ -152,11 +410,22 @@ def execute_simulation(model, something_new: str, lat: str, lng: str, personas: 
             ),
         }
 
-        print(f"{persona=}")
-        print(f"{something_new_info=}")
+        sattelite_info_arround_shomething_new = _fetch_sattelite_info(lat, lng)
+        shops = _fetch_surrounding_info()
+        other_info = {
+            "surrounding_info": _create_surronding_info_prompt(
+                persona["house_location"]["lat"],
+                persona["house_location"]["lng"],
+                shops,
+            ),
+            "sattelite_info_arround_shomething_new": sattelite_info_arround_shomething_new,
+        }
+
+        # print(f"{persona=}")
+        # print(f"{something_new_info=}")
 
         prompt = PERSONA_TEMPLATE.safe_substitute(
-            _flatten_dict(persona) | something_new_info
+            _flatten_dict(persona) | something_new_info | other_info
         )
 
         print(f"{prompt=}")
@@ -173,5 +442,6 @@ def execute_simulation(model, something_new: str, lat: str, lng: str, personas: 
                 }
             }
         )
+        print("=" * 20)
 
     return results

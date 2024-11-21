@@ -11,3 +11,10 @@ dependencies = [
 
 [tool.setuptools]
 py-modules = ["index", "service", "template"]
+
+[dependency-groups]
+dev = [
+    "boto3>=1.35.65",
+    "python-lambda-local>=0.1.13",
+    "setuptools>=75.5.0",
+]
