@@ -3,12 +3,11 @@ import os
 import re
 
 import vertexai
+from boto3.dynamodb.types import TypeDeserializer
 from geopy.distance import geodesic
 from google.oauth2 import service_account
 from template import PERSONA_TEMPLATE, SATTELITE_INFO_TEMPLATE
 from vertexai.generative_models import GenerativeModel
-from boto3.dynamodb.types import TypeDeserializer
-
 
 GEMINI_MODEL = os.environ["GEMINI_MODEL"]
 DYNAMODB_PERSONA_TABLE = os.environ["DYNAMODB_PERSONA_TABLE"]
@@ -430,9 +429,15 @@ def execute_simulation(
 
         print(f"{prompt=}")
 
-        response = _get_gemini_response(model, prompt)
-        if response is None:
+        # TODO: Quotaに引っかかってレスポンス取れないことがあるため暫定対応
+        try:
+            response = _get_gemini_response(model, prompt)
+            if response is None:
+                continue
+        except Exception as e:
+            print(f"{e=}")
             continue
+
         results.append(
             response
             | {
