@@ -36,7 +36,7 @@ export const SatelliteMapCitizen = (props: Props) => {
 			<img
 				src={citizen.imgUrl}
 				alt={citizen.score.toString()}
-				className="w-8 h-8 cursor-pointer"
+				className="w-12 h-12 cursor-pointer"
 			/>
 			{infoWindowShown && (
 				<InfoWindow anchor={marker} onClose={handleClose}>

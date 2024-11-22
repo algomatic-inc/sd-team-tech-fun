@@ -29,7 +29,7 @@ export const SatelliteMap = () => {
 			if (response.ok) {
 				const result = await response.json();
 
-				for (const res of result.response) {
+				for (const res of result) {
 					addCitizen({
 						id: self.crypto.randomUUID(),
 						message: res.message,
