@@ -43,7 +43,7 @@ ${sattelite_info_arround_shomething_new}
 """
 )
 
-SATTELITE_INFO_TEMPLATE = string.Template(
+SATELLITE_INFO_TEMPLATE = string.Template(
     """\
         （0～10のスコアで、0が不一致の可能性が高く、10が一致する可能性が高い）
         住宅地: ${housing}
