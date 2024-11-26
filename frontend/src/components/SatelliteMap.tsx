@@ -5,6 +5,13 @@ import type { Coordinate } from "../types";
 import { SatelliteMapCitizen } from "./SatelliteMapCitizen";
 import { useState } from "react";
 
+const getImageUrl = (gender: string, age: number, score: number) => {
+	const genderStr = gender === "男性" ? "man" : "woman";
+	const ageStr = age < 40 ? "young" : "old";
+	const scoreStr = score < 4 ? "low" : score < 8 ? "normal" : "high";
+	return `${genderStr}-${ageStr}-${scoreStr}.png`;
+};
+
 export const SatelliteMap = () => {
 	const { pin, addPin } = usePinStore();
 	const { citizens, addCitizen } = useCitizenStore();
@@ -31,20 +38,16 @@ export const SatelliteMap = () => {
 
 				for (const res of result) {
 					addCitizen({
-						id: self.crypto.randomUUID(),
+						id: res.personaId,
 						message: res.message,
 						score: res.score,
 						houseLocation: res.house_location,
-						imgUrl:
-							res.score >= 9
-								? "man_score_9-10.png"
-								: res.score >= 6
-									? "man_score_6-8.png"
-									: res.score >= 4
-										? "man_score_4-5.png"
-										: res.score >= 2
-											? "man_score_2-3.png"
-											: "man_score_0-1.png",
+						imgUrl: getImageUrl(res.gender, res.age, res.score),
+						hobby: res.hobby,
+						hasCar: res.hasCar,
+						gender: res.gender,
+						job: res.job,
+						age: res.age,
 					});
 				}
 			} else {

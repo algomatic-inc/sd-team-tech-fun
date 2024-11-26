@@ -17,6 +17,11 @@ export interface Citizen {
 	score: number;
 	houseLocation: Coordinate;
 	imgUrl: string;
+	hobby: string;
+	hasCar: boolean;
+	gender: string;
+	job: string;
+	age: number;
 }
 
 export interface CitizenState {

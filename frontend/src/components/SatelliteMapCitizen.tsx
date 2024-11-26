@@ -42,6 +42,12 @@ export const SatelliteMapCitizen = (props: Props) => {
 				<InfoWindow anchor={marker} onClose={handleClose}>
 					<h2>〇〇さん：{citizen.score}点</h2>
 					<p>{citizen.message}</p>
+					<br />
+					<p>年齢：{citizen.age}</p>
+					<p>性別：{citizen.gender}</p>
+					<p>職業：{citizen.job}</p>
+					<p>趣味：{citizen.hobby}</p>
+					<p>車がある：{citizen.hasCar ? "あり" : "なし"}</p>
 				</InfoWindow>
 			)}
 		</AdvancedMarker>
